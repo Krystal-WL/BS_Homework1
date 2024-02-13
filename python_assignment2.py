@@ -1,3 +1,24 @@
+import argparse
+import yaml
+
+parser = argparse.ArgumentParser(description='Plot for Toronto Shelter & Overnight Service Occupancy & Capacity Dataset')
+parser.add_argument('--input', '-i',  type=str, help='Path to the input CSV dataset')
+parser.add_argument('--output_file', '-o', type=str, help='Output plot filename')
+
+args = parser.parse_args()
+
+# read arguments
+print(args.input)
+
+config_files = ['user_config.yml', 'job_config.yml']
+config = {}
+
+for this_config_file in config_files:
+    with open(this_config_file, 'r') as yamlfile:
+        this_config = yaml.safe_load(yamlfile)
+        config.update(this_config)
+
+
 # Pandas and Visualization
 import pandas as pd
 import os
@@ -5,7 +26,7 @@ import os
 os.getcwd()
 
 # load the data to a single DataFrame
-occupancy = pd.read_csv('LIN_KRYSTAL_python_assignment2_orig.csv')
+occupancy = pd.read_csv(args.input)
 
 # profile the dataFrame
 occupancy.columns
@@ -103,7 +124,7 @@ occupancy_emergency_NaN = occupancy_emergency[occupancy_emergency.isna().any(axi
 occupancy_emergency_NaN.describe()
 
 # create groups based on ‘OCCUPANCY_DATE’ column
-occupancy_date_groups = occupancy_dropped.groupby(['OCCUPANCY_DATE'])
+occupancy_date_groups = occupancy_dropped.groupby([config['group_col']])
 occupancy_date_groups.count()
 
 # apply sum() and mean() on column 'SERVICE_USER_COUNT' and 'OCCUPANCY_RATE_BEDS'
@@ -118,12 +139,13 @@ import matplotlib.pyplot as plt
 fig, ax = plt.subplots()
 
 # plot using the aggregated data 'service_user_summary'
-ax.plot(service_user_summary.index, service_user_summary['total_service_user'], label = 'total_service_user')
+ax.plot(service_user_summary.index, service_user_summary['total_service_user'], label = 'total_service_user', color=config['plot_color'])
+
 # set a title, labels, a grid, and a legend
-ax.set_title('Total Service User Over Time') 
-ax.set_xlabel('occupancy date')
-ax.set_ylabel('total service user')
-ax.legend() 
+ax.set_xlabel(config['plot_config']['xlabel'])
+ax.set_ylabel(config['plot_config']['ylabel'])
+ax.set_title(config['plot_config']['title'])
+ax.legend()
 
 # grid is in the background
 ax.set_axisbelow(True) 
@@ -131,4 +153,4 @@ ax.set_axisbelow(True)
 # set the transparency of grid
 ax.grid(alpha=0.6) 
 
-plt.savefig('total_service_user_over_time.png')
+plt.savefig(f'{args.output_file}.png')
